@@ -335,8 +335,8 @@ def create_app():
             X_pred = generate_features_for_forecast(hist_json, start, end, wellness_score)
 
             # Make predictions
-            X_pred['earnings'] = earnings_model.predict(X_pred[X_pred.columns.drop(['earnings'])])
-            X_pred['predicted_hours_worked'] = hours_model.predict(X_pred[X_pred.columns])
+            X_pred['earnings'] = np.abs(earnings_model.predict(X_pred[X_pred.columns.drop(['earnings'])]))
+            X_pred['predicted_hours_worked'] = np.abs(hours_model.predict(X_pred[X_pred.columns]))
 
             # Format output
             result = X_pred[['earnings', 'predicted_hours_worked']].reset_index()
