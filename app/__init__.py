@@ -4,17 +4,22 @@ import joblib
 import numpy as np
 import pandas as pd
 import os
-from utils import generate_features_for_forecast, make_prompt
+import traceback
+from .regressor_utils import generate_features_for_forecast
+from .chatbot_utils import call_qwen
+
+from dotenv import load_dotenv
+load_dotenv()
 
 # Load pre-trained model
-MODEL_PATH = os.getenv("MODEL_PATH", "earnings_model.pkl")
+MODEL_PATH = os.getenv("MODEL_PATH", "./app/earnings_model.pkl")
 try:
     model = joblib.load(MODEL_PATH)
 except Exception as e:
     raise RuntimeError(f"Failed to load model: {e}")
 
 # Load historical data (update path if needed)
-HISTORICAL_DATA_PATH = "synthetic_driver_data.csv"
+HISTORICAL_DATA_PATH = "./app/synthetic_driver_data.csv"
 try:
     df = pd.read_csv(HISTORICAL_DATA_PATH)
     df['timestamp'] = pd.to_datetime(df['timestamp'])
@@ -49,19 +54,48 @@ def root():
 @app.route("/chatbot", methods=["POST"])
 def ask_bot():
     try:
+        print(request)
         data = request.get_json(force=True)
-        query = data.get("query")
-        
-        prompt = make_prompt(query)
-        
-        response = client.models
-        
-        return {
-            "query": query,
-            "response": response,
-        }
-        
+        user_input = data.get("query")
+        session_messages = data.get("messages", [])  # Allow multi-turn conversation
+
+        if not user_input or not isinstance(user_input, str):
+            return jsonify({"error": "Invalid or missing 'query' field"}), 400
+
+        # Initialize system message if none exists
+        if not session_messages:
+            session_messages = [{
+                "role": "system",
+                "content": """You are a helpful assistant supporting Gojek drivers with welfare and well-being.
+                I can help with:
+                - Insurance inquiries
+                - Fatigue prevention tips
+                - Financial literacy resources
+                - Traffic updates
+                - Weather driving safety
+                
+                Ask me anything related to these topics."""
+            }]
+
+        # Add user input to message history
+        session_messages.append({"role": "user", "content": user_input})
+
+        # Call Qwen with full message history
+        assistant_output = call_qwen(session_messages).output.choices[0].message.content
+
+        # Add assistant response to history
+        session_messages.append({"role": "assistant", "content": assistant_output})
+
+        return jsonify({
+            "status": "success",
+            "query": user_input,
+            "response": assistant_output,
+            "messages": session_messages
+        })
+
     except Exception as e:
+        tb_str = traceback.format_exc()
+        print(f"demo.py traceback: {tb_str}")
         app.logger.error(f"Error in /chatbot: {str(e)}")
         return jsonify({"error": str(e)}), 500
     
