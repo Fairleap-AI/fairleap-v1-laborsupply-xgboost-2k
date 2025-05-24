@@ -58,7 +58,8 @@ for driver_id in drivers:
         avg_ride_duration_minutes = 0
         if rides > 0:
             avg_ride_duration_minutes = round((hours_worked * 60) / rides, 2)
-
+            
+        wellness_score = int(random.uniform(0,100))
 
         data.append([
             driver_id,
@@ -69,6 +70,7 @@ for driver_id in drivers:
             hours_worked,
             rides,
             earnings,
+            wellness_score,
             random.choice(locations),  # preferred_location (can be different from current)
             avg_ride_duration_minutes # In minutes for better readability
         ])
@@ -81,7 +83,7 @@ for driver_id in drivers:
 columns = [
     'driver_id', 'timestamp', 'day_of_week', 'hour_of_day',
     'location_cluster', 'hours_worked', 'rides_completed',
-    'earnings', 'preferred_location', 'avg_ride_duration_minutes'
+    'earnings', 'wellness_score', 'preferred_location', 'avg_ride_duration_minutes'
 ]
 df = pd.DataFrame(data, columns=columns)
 
