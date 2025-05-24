@@ -1,0 +1,12 @@
+scikit-learn
+pandas
+numpy
+matplotlib
+joblib
+pillow
+ipykernel
+flask
+openai
+skforecast
+pmdarima
+xgboost
