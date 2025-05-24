@@ -4,10 +4,13 @@ numpy
 matplotlib
 joblib
 pillow
-ipykernel
+# ipykernel
 flask
-openai
-skforecast
-pmdarima
+flask_cors
+gunicorn
+# openai
+# skforecast
+# pmdarima
 xgboost
 dashscope
+dotenv

@@ -1,0 +1,17 @@
+services:
+  web:
+    build: .
+    container_name: fairleap_ai
+    ports:
+      - "${PORT:-5000}:5000"
+    environment:
+      - PORT=5000
+      - LOG_LEVEL=debug
+    command: >
+      gunicorn
+      --bind 0.0.0.0:5000
+      --workers 1
+      --threads 2
+      --log-level debug
+      wsgi:app
+    restart: unless-stopped
