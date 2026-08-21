@@ -11,11 +11,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Load pre-trained earnings_model
-MODEL_PATH = os.getenv("MODEL_PATH", "./app/earnings_model.pkl")
-try:
-    earnings_model = joblib.load(MODEL_PATH)
-except Exception as e:
-    raise RuntimeError(f"Failed to load earnings_model: {e}")
 MODEL_PATH = os.getenv("MODEL_PATH", "./app/hours_model.pkl")
 try:
     hours_model = joblib.load(MODEL_PATH)
@@ -56,15 +51,17 @@ def create_app():
             "routes": routes
         })
         
-    @app.route("/predict/earnings", methods=["POST"])
-    def predict_earnings():
+    @app.route("/predict/hours", methods=["POST"])
+    def predict_hours():
         """
-        Predict future earnings for a given timeframe.
-        Frontend sends:
+        Predict hours worked per day for a given timeframe.
+        The regressor takes predicted earnings as its first feature, so the
+        caller supplies them - pass the earnings service response straight
+        through as "earnings".
         {
         "start": "2025-05-13",
         "end": "2025-05-20",
-        "wellness_score": "20"
+        "wellness_score": "20",
         "daily_logs": [{
                     day: '2025-05-24',
                     total_distance,
@@ -72,7 +69,8 @@ def create_app():
                     total_tip,
                     total_earnings,
                     total_trips
-                }]
+                }],
+        "earnings": [{ date: '2025-05-13', earnings: 171613.64 }]
         }
         """
         try:
@@ -81,34 +79,48 @@ def create_app():
             end = pd.to_datetime(data.get("end"))
             wellness_score = int(data.get("wellness_score"))
             hist_json = data.get("daily_logs")
-            
-            # driver_id = data.get("driver_id")
+            earnings_json = data.get("earnings")
 
             if not start or not end or start > end:
                 return jsonify({"error": "Invalid date range"}), 400
 
+            if not earnings_json:
+                return jsonify({"error": 'Parameter "earnings" required'}), 400
+
             # Generate features for the requested period
             X_pred = generate_features_for_forecast(hist_json, start, end, wellness_score)
 
-            # Make predictions
-            X_pred['earnings'] = np.abs(earnings_model.predict(X_pred[X_pred.columns.drop(['earnings'])]))
+            # Fill in the earnings column the regressor was trained to read first.
+            # A missing day would reach the model as NaN and predict silently.
+            supplied = pd.Series(
+                {pd.to_datetime(e["date"]): float(e["earnings"]) for e in earnings_json}
+            )
+            X_pred['earnings'] = supplied.reindex(X_pred.index)
+            missing = X_pred.index[X_pred['earnings'].isna()]
+            if len(missing) > 0:
+                return jsonify({
+                    "error": "No earnings supplied for " + ", ".join(missing.strftime("%Y-%m-%d"))
+                }), 400
+
+            # Make predictions. X_pred is already in the trained feature order,
+            # earnings first.
             X_pred['predicted_hours_worked'] = np.abs(hours_model.predict(X_pred[X_pred.columns]))
 
             # Format output
-            result = X_pred[['earnings', 'predicted_hours_worked']].reset_index()
+            result = X_pred[['predicted_hours_worked']].reset_index()
             result.rename(columns={'timestamp': 'date'}, inplace=True)
             result['date'] = result['date'].dt.strftime('%Y-%m-%d')
 
             return jsonify({
                 "status": "success",
-                "currency": "IDR",
+                "unit": "hours",
                 "predictions": result.to_dict(orient="records")
             })
 
         except Exception as e:
             tb_str = traceback.format_exc()
             print(f"init.py traceback: {tb_str}")
-            app.logger.error(f"Error in /chatbot: {str(e)}")
+            app.logger.error(f"Error in /predict/hours: {str(e)}")
             return jsonify({"error": str(e)}), 500
 
     return app
