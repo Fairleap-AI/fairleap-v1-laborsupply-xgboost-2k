@@ -1,15 +1,9 @@
 scikit-learn
 pandas
 numpy
-matplotlib
 joblib
-pillow
-# ipykernel
 flask
 flask_cors
 gunicorn
-# openai
-# skforecast
-# pmdarima
 xgboost
 dotenv
