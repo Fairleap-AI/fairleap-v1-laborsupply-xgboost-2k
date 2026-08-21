@@ -12,5 +12,4 @@ gunicorn
 # skforecast
 # pmdarima
 xgboost
-dashscope
 dotenv
