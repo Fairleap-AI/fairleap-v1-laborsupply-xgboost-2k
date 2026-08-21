@@ -1,7 +1,7 @@
 services:
   web:
     build: .
-    container_name: fairleap_ai
+    container_name: fairleap_laborsupply
     env_file:
       - .env
     ports:
