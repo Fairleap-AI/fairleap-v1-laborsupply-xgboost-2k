@@ -39,24 +39,6 @@ def generate_features_for_forecast(hist_json, forecast_start, forecast_end, well
     for lag in range(1, 15):
         df_pred[f'lag_{lag}'] = np.nan
 
-    # --- Original first lag calculation loop ---
-    # This loop appears redundant given the subsequent loop and has a potential bug
-    # (using 'earnings' from df_hist which might not exist, should be 'total_earnings').
-    # Commenting it out to rely on the corrected main loop below.
-    # If df_hist is not empty, this loop would attempt to fill lags.
-    # if not df_hist.empty:
-    #     min_hist_date_for_first_loop = df_hist.index[0]
-    #     for lag in range(1, 15):  # up to lag_14
-    #         col_name = f'lag_{lag}'
-    #         # This lambda needs 'total_earnings' and robust empty slice check before .iloc[-1]
-    #         df_pred[col_name] = df_pred.index.map(
-    #             lambda dt: (
-    #                 series := df_hist.loc[df_hist.index <= (lag_date := dt - pd.Timedelta(days=lag)), 'total_earnings'], # Corrected to 'total_earnings'
-    #                 series.iloc[-1] if not series.empty else np.nan
-    #             )[1] if lag_date >= min_hist_date_for_first_loop else np.nan 
-    #         )
-    # --- End of original first lag calculation loop ---
-
     history = df_hist.copy() # Use a copy of the historical data
 
     # Cache the minimum historical date if history is not empty
