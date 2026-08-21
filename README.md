@@ -53,7 +53,7 @@ from forecast earnings, calendar context, a wellness score, and the driver's own
 > [Limitations](#%EF%B8%8F-limitations--bias) before doing anything with it.
 
 It is the labour-supply half of the Fairleap forecasting pair. Its first input feature is the output
-of [`fairleap-v1-earnings-xgboost-11k`](https://github.com/Fairleap-AI/fairleap-v1-earnings-xgboost-11k),
+of [`fairleap-v1-earnings-xgboost-11k`](https://huggingface.co/fairleap-ai/fairleap-v1-earnings-xgboost-11k),
 so it **cannot forecast standalone** — the caller supplies the earnings series.
 
 ## 📊 Model Details
